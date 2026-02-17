@@ -47,7 +47,6 @@ def run_db_migration():
         print("--- Iniciando migración dinámica de esquemas y tablas ---")
         
         # --- 0. Creación Condicional de ESQUEMAS ---
-        
         if get_bool_env('CREATE_SCHEMA_BITCRAM'):
             print(f"Asegurando esquema: {S_BIT}...")
             conn.execute(text(f"CREATE DATABASE IF NOT EXISTS `{S_BIT}`;"))
@@ -60,8 +59,6 @@ def run_db_migration():
             print(f"Asegurando esquema: {S_APP}...")
             conn.execute(text(f"CREATE DATABASE IF NOT EXISTS `{S_APP}`;"))
 
-        # Importante: Algunos conectores requieren un commit aquí si vas a usar 
-        # las tablas en los mismos esquemas inmediatamente después.
         conn.commit() 
 
         # --- 1. RAW ITEM DATA ---
@@ -173,6 +170,40 @@ def run_db_migration():
                    `product_name` VARCHAR(255)
                 );
             """))
+
+        # --- 7. QUESTIONS ---
+        if get_bool_env('CREATE_QUESTIONS'):
+            print(f"Creando {S_ML}.questions...")
+            conn.execute(text(f"""
+                CREATE TABLE IF NOT EXISTS `{S_ML}`.`questions` (
+                    `question_id` VARCHAR(255) PRIMARY KEY,
+                    `data` JSON
+                );
+            """))
+
+        # --- 8. ITEMS ---
+        if get_bool_env('CREATE_ITEMS'):
+            print(f"Creando {S_ML}.items...")
+            conn.execute(text(f"""
+                CREATE TABLE IF NOT EXISTS `{S_ML}`.`items` (
+                    `question_id` VARCHAR(255) PRIMARY KEY,
+                    `data` JSON
+                );
+            """))
+
+        # --- 9. AI RESPONSES ---
+        if get_bool_env('CREATE_AI_RESPONSES'):
+            print(f"Creando {S_ML}.ai_responses...")
+            conn.execute(text(f"""
+                CREATE TABLE IF NOT EXISTS `{S_ML}`.`ai_responses` (
+                    `id` INT AUTO_INCREMENT PRIMARY KEY,
+                    `question_id` VARCHAR(255),
+                    `stage` VARCHAR(100),
+                    `response` JSON,
+                    INDEX (`question_id`)
+                );
+            """))
+
         conn.commit()
         print("--- Migración completada exitosamente ---")
         
